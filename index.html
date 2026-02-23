@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Food Estimation</title>
+<title>Advanced Image Difference Analyzer</title>
 
 <style>
-body {
-    font-family: Arial;
-    background: linear-gradient(135deg,#4facfe,#00f2fe);
-    text-align:center;
+body{
+    font-family:Arial;
+    background:linear-gradient(135deg,#667eea,#764ba2);
     padding:20px;
+    text-align:center;
 }
 
 .container{
     background:white;
-    max-width:600px;
+    max-width:900px;
     margin:auto;
     padding:20px;
-    border-radius:15px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.2);
+    border-radius:20px;
+    box-shadow:0 15px 30px rgba(0,0,0,0.3);
 }
 
 button{
@@ -28,14 +28,15 @@ button{
     border:none;
     border-radius:10px;
     cursor:pointer;
-    font-size:14px;
+    font-weight:bold;
 }
 
-.primary{background:#4CAF50;color:white;}
 .blue{background:#2196F3;color:white;}
+.green{background:#4CAF50;color:white;}
 .red{background:#f44336;color:white;}
+.orange{background:#ff9800;color:white;}
 
-video,img{
+video,img,canvas{
     width:100%;
     border-radius:10px;
     margin-top:10px;
@@ -43,7 +44,7 @@ video,img{
 
 .compare{
     display:flex;
-    gap:10px;
+    gap:15px;
     margin-top:15px;
 }
 
@@ -55,6 +56,7 @@ video,img{
     font-weight:bold;
     margin-top:10px;
 }
+
 .result{
     margin-top:15px;
     font-size:18px;
@@ -64,21 +66,21 @@ video,img{
 </head>
 <body>
 
-<h1>Food Image Difference Analyzer</h1>
+<h1>🔥 Advanced Image Difference Analyzer</h1>
 
 <div class="container">
 
 <button class="blue" onclick="startCamera()">📷 เปิดกล้อง</button>
 <button class="blue" onclick="switchCamera()">🔄 สลับกล้อง</button>
-<button class="primary" onclick="captureBefore()">📸 ถ่ายเป็น BEFORE</button>
-<button class="primary" onclick="captureAfter()">📸 ถ่ายเป็น AFTER</button>
+<button class="green" onclick="captureBefore()">📸 ถ่าย BEFORE</button>
+<button class="green" onclick="captureAfter()">📸 ถ่าย AFTER</button>
 
 <br><br>
 
-เลือกไฟล์ BEFORE:
+เลือก BEFORE:
 <input type="file" accept="image/*" onchange="uploadBefore(event)">
 <br>
-เลือกไฟล์ AFTER:
+เลือก AFTER:
 <input type="file" accept="image/*" onchange="uploadAfter(event)">
 
 <video id="video" autoplay playsinline></video>
@@ -95,9 +97,13 @@ video,img{
 </div>
 </div>
 
-<button class="red" onclick="calculateDifference()">🧮 คำนวณความต่าง</button>
+<button class="red" onclick="calculateDifference()">🧮 คำนวณ</button>
+<button class="orange" onclick="toggleHeatmap()">🌡 Toggle Heatmap</button>
 
 <div class="result" id="resultText"></div>
+
+<div class="label">Difference Map</div>
+<canvas id="diffCanvas"></canvas>
 
 </div>
 
@@ -106,6 +112,8 @@ let video=document.getElementById("video");
 let beforeImg=document.getElementById("beforeImg");
 let afterImg=document.getElementById("afterImg");
 let resultText=document.getElementById("resultText");
+let diffCanvas=document.getElementById("diffCanvas");
+let heatmapMode=false;
 
 let currentStream;
 let facingMode="environment";
@@ -146,23 +154,24 @@ return canvas;
 
 function uploadBefore(event){
 let reader=new FileReader();
-reader.onload=function(e){
-beforeImg.src=e.target.result;
-}
+reader.onload=e=>beforeImg.src=e.target.result;
 reader.readAsDataURL(event.target.files[0]);
 }
 
 function uploadAfter(event){
 let reader=new FileReader();
-reader.onload=function(e){
-afterImg.src=e.target.result;
-}
+reader.onload=e=>afterImg.src=e.target.result;
 reader.readAsDataURL(event.target.files[0]);
+}
+
+function toggleHeatmap(){
+heatmapMode=!heatmapMode;
+alert("Heatmap: "+(heatmapMode?"ON":"OFF"));
 }
 
 function calculateDifference(){
 if(!beforeImg.src || !afterImg.src){
-alert("กรุณาใส่รูป BEFORE และ AFTER ก่อน");
+alert("ใส่ BEFORE และ AFTER ก่อน");
 return;
 }
 
@@ -174,30 +183,67 @@ img2.src=afterImg.src;
 img1.onload=function(){
 img2.onload=function(){
 
-let canvas=document.createElement("canvas");
-canvas.width=img1.width;
-canvas.height=img1.height;
+let width=Math.min(img1.width,img2.width);
+let height=Math.min(img1.height,img2.height);
 
-let ctx=canvas.getContext("2d");
-ctx.drawImage(img1,0,0);
-let data1=ctx.getImageData(0,0,canvas.width,canvas.height);
+diffCanvas.width=width;
+diffCanvas.height=height;
 
-ctx.drawImage(img2,0,0);
-let data2=ctx.getImageData(0,0,canvas.width,canvas.height);
+let ctx=diffCanvas.getContext("2d");
+
+let tempCanvas=document.createElement("canvas");
+tempCanvas.width=width;
+tempCanvas.height=height;
+let tempCtx=tempCanvas.getContext("2d");
+
+tempCtx.drawImage(img1,0,0,width,height);
+let data1=tempCtx.getImageData(0,0,width,height);
+
+tempCtx.drawImage(img2,0,0,width,height);
+let data2=tempCtx.getImageData(0,0,width,height);
+
+let diffData=ctx.createImageData(width,height);
 
 let diffPixels=0;
+let totalPixels=width*height;
 
 for(let i=0;i<data1.data.length;i+=4){
+
 let rDiff=Math.abs(data1.data[i]-data2.data[i]);
 let gDiff=Math.abs(data1.data[i+1]-data2.data[i+1]);
 let bDiff=Math.abs(data1.data[i+2]-data2.data[i+2]);
 
-if(rDiff+gDiff+bDiff>50){
+let diff=rDiff+gDiff+bDiff;
+
+if(diff>60){
 diffPixels++;
+
+if(heatmapMode){
+diffData.data[i]=diff;
+diffData.data[i+1]=0;
+diffData.data[i+2]=255-diff;
+}else{
+diffData.data[i]=255;
+diffData.data[i+1]=0;
+diffData.data[i+2]=0;
+}
+
+diffData.data[i+3]=255;
+}else{
+diffData.data[i]=0;
+diffData.data[i+1]=0;
+diffData.data[i+2]=0;
+diffData.data[i+3]=255;
 }
 }
 
-resultText.innerHTML="จำนวน Pixel ที่แตกต่าง: "+diffPixels;
+ctx.putImageData(diffData,0,0);
+
+let percent=((diffPixels/totalPixels)*100).toFixed(2);
+
+resultText.innerHTML=
+"Pixel ต่างกัน: "+diffPixels+
+"<br>คิดเป็น: "+percent+" %";
 }
 }
 }
