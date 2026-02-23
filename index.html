@@ -3,142 +3,203 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Food Estimation Web</title>
+<title>Food Estimation</title>
 
 <style>
 body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #4facfe, #00f2fe);
-    text-align: center;
-    margin: 0;
-    padding: 20px;
+    font-family: Arial;
+    background: linear-gradient(135deg,#4facfe,#00f2fe);
+    text-align:center;
+    padding:20px;
 }
 
-h1 {
-    color: white;
+.container{
+    background:white;
+    max-width:600px;
+    margin:auto;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.2);
 }
 
-.container {
-    background: white;
-    padding: 20px;
-    border-radius: 15px;
-    max-width: 500px;
-    margin: auto;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+button{
+    padding:10px 15px;
+    margin:5px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:14px;
 }
 
-button {
-    padding: 10px 15px;
-    margin: 5px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 16px;
+.primary{background:#4CAF50;color:white;}
+.blue{background:#2196F3;color:white;}
+.red{background:#f44336;color:white;}
+
+video,img{
+    width:100%;
+    border-radius:10px;
+    margin-top:10px;
 }
 
-.primary { background: #4CAF50; color: white; }
-.secondary { background: #2196F3; color: white; }
-.danger { background: #f44336; color: white; }
-
-video, img {
-    width: 100%;
-    border-radius: 10px;
-    margin-top: 10px;
+.compare{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
 }
 
-.compare {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
+.compare div{
+    flex:1;
 }
 
-.compare div {
-    flex: 1;
+.label{
+    font-weight:bold;
+    margin-top:10px;
 }
-
-.label {
-    font-weight: bold;
-    margin-top: 10px;
+.result{
+    margin-top:15px;
+    font-size:18px;
+    font-weight:bold;
 }
 </style>
 </head>
-
 <body>
 
-<h1>Food Estimation</h1>
+<h1>Food Image Difference Analyzer</h1>
 
 <div class="container">
 
-    <button class="secondary" onclick="startCamera()">📷 เปิดกล้อง</button>
-    <button class="secondary" onclick="switchCamera()">🔄 สลับกล้อง</button>
-    <button class="primary" onclick="takePhoto()">📸 ถ่ายรูป</button>
-    <br>
-    <input type="file" accept="image/*" onchange="uploadImage(event)">
+<button class="blue" onclick="startCamera()">📷 เปิดกล้อง</button>
+<button class="blue" onclick="switchCamera()">🔄 สลับกล้อง</button>
+<button class="primary" onclick="captureBefore()">📸 ถ่ายเป็น BEFORE</button>
+<button class="primary" onclick="captureAfter()">📸 ถ่ายเป็น AFTER</button>
 
-    <video id="video" autoplay playsinline></video>
+<br><br>
 
-    <div class="compare">
-        <div>
-            <div class="label">ก่อนถ่าย / ก่อนเลือก</div>
-            <img id="beforeImage">
-        </div>
-        <div>
-            <div class="label">หลังถ่าย / หลังเลือก</div>
-            <img id="afterImage">
-        </div>
-    </div>
+เลือกไฟล์ BEFORE:
+<input type="file" accept="image/*" onchange="uploadBefore(event)">
+<br>
+เลือกไฟล์ AFTER:
+<input type="file" accept="image/*" onchange="uploadAfter(event)">
+
+<video id="video" autoplay playsinline></video>
+
+<div class="compare">
+<div>
+<div class="label">BEFORE</div>
+<img id="beforeImg">
+</div>
+
+<div>
+<div class="label">AFTER</div>
+<img id="afterImg">
+</div>
+</div>
+
+<button class="red" onclick="calculateDifference()">🧮 คำนวณความต่าง</button>
+
+<div class="result" id="resultText"></div>
 
 </div>
 
 <script>
-let video = document.getElementById("video");
-let beforeImage = document.getElementById("beforeImage");
-let afterImage = document.getElementById("afterImage");
+let video=document.getElementById("video");
+let beforeImg=document.getElementById("beforeImg");
+let afterImg=document.getElementById("afterImg");
+let resultText=document.getElementById("resultText");
 
 let currentStream;
-let facingMode = "environment"; // เริ่มจากกล้องหลัง
+let facingMode="environment";
 
-async function startCamera() {
-    if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
-    }
-
-    currentStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facingMode }
-    });
-
-    video.srcObject = currentStream;
+async function startCamera(){
+if(currentStream){
+currentStream.getTracks().forEach(track=>track.stop());
+}
+currentStream=await navigator.mediaDevices.getUserMedia({
+video:{facingMode:facingMode}
+});
+video.srcObject=currentStream;
 }
 
-function switchCamera() {
-    facingMode = (facingMode === "environment") ? "user" : "environment";
-    startCamera();
+function switchCamera(){
+facingMode=(facingMode==="environment")?"user":"environment";
+startCamera();
 }
 
-function takePhoto() {
-    let canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    let ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
-
-    let imageData = canvas.toDataURL("image/png");
-
-    beforeImage.src = video.srcObject ? imageData : "";
-    afterImage.src = imageData;
+function captureBefore(){
+let canvas=createCanvasFromVideo();
+beforeImg.src=canvas.toDataURL();
 }
 
-function uploadImage(event) {
-    let file = event.target.files[0];
-    if (!file) return;
+function captureAfter(){
+let canvas=createCanvasFromVideo();
+afterImg.src=canvas.toDataURL();
+}
 
-    let reader = new FileReader();
-    reader.onload = function(e) {
-        beforeImage.src = e.target.result;
-        afterImage.src = e.target.result;
-    }
-    reader.readAsDataURL(file);
+function createCanvasFromVideo(){
+let canvas=document.createElement("canvas");
+canvas.width=video.videoWidth;
+canvas.height=video.videoHeight;
+let ctx=canvas.getContext("2d");
+ctx.drawImage(video,0,0);
+return canvas;
+}
+
+function uploadBefore(event){
+let reader=new FileReader();
+reader.onload=function(e){
+beforeImg.src=e.target.result;
+}
+reader.readAsDataURL(event.target.files[0]);
+}
+
+function uploadAfter(event){
+let reader=new FileReader();
+reader.onload=function(e){
+afterImg.src=e.target.result;
+}
+reader.readAsDataURL(event.target.files[0]);
+}
+
+function calculateDifference(){
+if(!beforeImg.src || !afterImg.src){
+alert("กรุณาใส่รูป BEFORE และ AFTER ก่อน");
+return;
+}
+
+let img1=new Image();
+let img2=new Image();
+img1.src=beforeImg.src;
+img2.src=afterImg.src;
+
+img1.onload=function(){
+img2.onload=function(){
+
+let canvas=document.createElement("canvas");
+canvas.width=img1.width;
+canvas.height=img1.height;
+
+let ctx=canvas.getContext("2d");
+ctx.drawImage(img1,0,0);
+let data1=ctx.getImageData(0,0,canvas.width,canvas.height);
+
+ctx.drawImage(img2,0,0);
+let data2=ctx.getImageData(0,0,canvas.width,canvas.height);
+
+let diffPixels=0;
+
+for(let i=0;i<data1.data.length;i+=4){
+let rDiff=Math.abs(data1.data[i]-data2.data[i]);
+let gDiff=Math.abs(data1.data[i+1]-data2.data[i+1]);
+let bDiff=Math.abs(data1.data[i+2]-data2.data[i+2]);
+
+if(rDiff+gDiff+bDiff>50){
+diffPixels++;
+}
+}
+
+resultText.innerHTML="จำนวน Pixel ที่แตกต่าง: "+diffPixels;
+}
+}
 }
 </script>
 
