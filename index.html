@@ -1,254 +1,236 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Advanced Image Difference Analyzer</title>
+<title>Food Estimator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
-    font-family:Arial;
-    background:linear-gradient(135deg,#667eea,#764ba2);
-    padding:20px;
-    text-align:center;
+font-family:Arial;
+background:#f4f6f9;
+text-align:center;
+padding:20px;
 }
-
-.container{
-    background:white;
-    max-width:900px;
-    margin:auto;
-    padding:20px;
-    border-radius:20px;
-    box-shadow:0 15px 30px rgba(0,0,0,0.3);
+.section{
+background:white;
+padding:20px;
+margin:15px auto;
+width:90%;
+max-width:500px;
+border-radius:10px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
-
 button{
-    padding:10px 15px;
-    margin:5px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    font-weight:bold;
+padding:10px 15px;
+margin:5px;
+border:none;
+border-radius:5px;
+background:#3498db;
+color:white;
+cursor:pointer;
 }
-
-.blue{background:#2196F3;color:white;}
-.green{background:#4CAF50;color:white;}
-.red{background:#f44336;color:white;}
-.orange{background:#ff9800;color:white;}
-
-video,img,canvas{
-    width:100%;
-    border-radius:10px;
-    margin-top:10px;
+button:hover{
+background:#2980b9;
 }
-
-.compare{
-    display:flex;
-    gap:15px;
-    margin-top:15px;
-}
-
-.compare div{
-    flex:1;
-}
-
-.label{
-    font-weight:bold;
-    margin-top:10px;
-}
-
-.result{
-    margin-top:15px;
-    font-size:18px;
-    font-weight:bold;
+canvas{
+max-width:100%;
+margin-top:10px;
 }
 </style>
 </head>
 <body>
 
-<h1>Assessment of Food Intake Assisted by Photography</h1>
+<h2>Food Estimator Dashboard</h2>
 
-<div class="container">
-
-<button class="blue" onclick="startCamera()">📷 เปิดกล้อง</button>
-<button class="blue" onclick="switchCamera()">🔄 สลับกล้อง</button>
-<button class="green" onclick="captureBefore()">📸 ถ่าย BEFORE</button>
-<button class="green" onclick="captureAfter()">📸 ถ่าย AFTER</button>
-
-<br><br>
-
-เลือก BEFORE:
-<input type="file" accept="image/*" onchange="uploadBefore(event)">
-<br>
-เลือก AFTER:
-<input type="file" accept="image/*" onchange="uploadAfter(event)">
-
-<video id="video" autoplay playsinline></video>
-
-<div class="compare">
-<div>
-<div class="label">BEFORE</div>
-<img id="beforeImg">
+<div class="section">
+<h3>เลือกคนไข้</h3>
+<select id="patientSelect">
+<option value="">-- เลือกคนไข้ --</option>
+</select>
+<div id="patientInfo"></div>
 </div>
 
-<div>
-<div class="label">AFTER</div>
-<img id="afterImg">
+<div class="section">
+<h3>Before</h3>
+<input type="file" accept="image/*" id="beforeInput">
+<img id="beforeImg" width="200">
 </div>
+
+<div class="section">
+<h3>After</h3>
+<input type="file" accept="image/*" id="afterInput">
+<img id="afterImg" width="200">
 </div>
 
-<button class="red" onclick="calculateDifference()">🧮 คำนวณ</button>
-<button class="orange" onclick="toggleHeatmap()">🌡 Toggle Heatmap</button>
-
-<div class="result" id="resultText"></div>
-
-<div class="label">Difference Map</div>
+<div class="section">
+<button onclick="compareImages()">คำนวณ</button>
+<h3 id="result"></h3>
 <canvas id="diffCanvas"></canvas>
+</div>
 
+<div class="section">
+<h3>Dashboard</h3>
+<canvas id="chartCanvas"></canvas>
 </div>
 
 <script>
-let video=document.getElementById("video");
-let beforeImg=document.getElementById("beforeImg");
-let afterImg=document.getElementById("afterImg");
-let resultText=document.getElementById("resultText");
-let diffCanvas=document.getElementById("diffCanvas");
-let heatmapMode=false;
 
-let currentStream;
-let facingMode="environment";
+const scriptURL="https://script.google.com/macros/s/AKfycbzSEKwDgxyvTFj2M-5d-Xfp6aLrB4946GuloIb0wzqyYTrk9EivMbkU0oUuarAqXoeb8Q/exec";
 
-async function startCamera(){
-if(currentStream){
-currentStream.getTracks().forEach(track=>track.stop());
+let selectedData={};
+let diffPercent=0;
+let diffPixel=0;
+
+function loadPatients(){
+fetch(scriptURL+"?type=patients")
+.then(res=>res.json())
+.then(data=>{
+let select=document.getElementById("patientSelect");
+select.innerHTML='<option value="">-- เลือกคนไข้ --</option>';
+
+for(let i=1;i<data.length;i++){
+let row=data[i];
+let option=document.createElement("option");
+option.value=JSON.stringify(row);
+option.text=row[0];
+select.appendChild(option);
 }
-currentStream=await navigator.mediaDevices.getUserMedia({
-video:{facingMode:facingMode}
 });
-video.srcObject=currentStream;
 }
 
-function switchCamera(){
-facingMode=(facingMode==="environment")?"user":"environment";
-startCamera();
+document.getElementById("patientSelect").addEventListener("change",function(){
+if(!this.value) return;
+let row=JSON.parse(this.value);
+
+let bmi=(row[2]/((row[3]/100)*(row[3]/100))).toFixed(2);
+
+selectedData={
+name:row[0],
+dx:row[1],
+weight:row[2],
+height:row[3],
+bmi:bmi
+};
+
+document.getElementById("patientInfo").innerHTML=
+"DX: "+row[1]+"<br>Weight: "+row[2]+" kg"+
+"<br>Height: "+row[3]+" cm"+
+"<br>BMI: "+bmi;
+
+loadChart(row[0]);
+});
+
+function loadImage(input,img){
+let file=input.files[0];
+let reader=new FileReader();
+reader.onload=function(e){
+img.src=e.target.result;
+}
+reader.readAsDataURL(file);
 }
 
-function captureBefore(){
-let canvas=createCanvasFromVideo();
-beforeImg.src=canvas.toDataURL();
-}
+beforeInput.onchange=()=>loadImage(beforeInput,beforeImg);
+afterInput.onchange=()=>loadImage(afterInput,afterImg);
 
-function captureAfter(){
-let canvas=createCanvasFromVideo();
-afterImg.src=canvas.toDataURL();
-}
+function compareImages(){
 
-function createCanvasFromVideo(){
-let canvas=document.createElement("canvas");
-canvas.width=video.videoWidth;
-canvas.height=video.videoHeight;
+let img1=beforeImg;
+let img2=afterImg;
+
+let canvas=document.getElementById("diffCanvas");
 let ctx=canvas.getContext("2d");
-ctx.drawImage(video,0,0);
-return canvas;
-}
 
-function uploadBefore(event){
-let reader=new FileReader();
-reader.onload=e=>beforeImg.src=e.target.result;
-reader.readAsDataURL(event.target.files[0]);
-}
+canvas.width=img1.width;
+canvas.height=img1.height;
 
-function uploadAfter(event){
-let reader=new FileReader();
-reader.onload=e=>afterImg.src=e.target.result;
-reader.readAsDataURL(event.target.files[0]);
-}
+ctx.drawImage(img1,0,0);
 
-function toggleHeatmap(){
-heatmapMode=!heatmapMode;
-alert("Heatmap: "+(heatmapMode?"ON":"OFF"));
-}
+let data1=ctx.getImageData(0,0,canvas.width,canvas.height);
 
-function calculateDifference(){
-if(!beforeImg.src || !afterImg.src){
-alert("ใส่ BEFORE และ AFTER ก่อน");
-return;
-}
+ctx.drawImage(img2,0,0);
+let data2=ctx.getImageData(0,0,canvas.width,canvas.height);
 
-let img1=new Image();
-let img2=new Image();
-img1.src=beforeImg.src;
-img2.src=afterImg.src;
-
-img1.onload=function(){
-img2.onload=function(){
-
-let width=Math.min(img1.width,img2.width);
-let height=Math.min(img1.height,img2.height);
-
-diffCanvas.width=width;
-diffCanvas.height=height;
-
-let ctx=diffCanvas.getContext("2d");
-
-let tempCanvas=document.createElement("canvas");
-tempCanvas.width=width;
-tempCanvas.height=height;
-let tempCtx=tempCanvas.getContext("2d");
-
-tempCtx.drawImage(img1,0,0,width,height);
-let data1=tempCtx.getImageData(0,0,width,height);
-
-tempCtx.drawImage(img2,0,0,width,height);
-let data2=tempCtx.getImageData(0,0,width,height);
-
-let diffData=ctx.createImageData(width,height);
-
-let diffPixels=0;
-let totalPixels=width*height;
+let diffCount=0;
 
 for(let i=0;i<data1.data.length;i+=4){
+let r1=data1.data[i];
+let r2=data2.data[i];
 
-let rDiff=Math.abs(data1.data[i]-data2.data[i]);
-let gDiff=Math.abs(data1.data[i+1]-data2.data[i+1]);
-let bDiff=Math.abs(data1.data[i+2]-data2.data[i+2]);
-
-let diff=rDiff+gDiff+bDiff;
-
-if(diff>60){
-diffPixels++;
-
-if(heatmapMode){
-diffData.data[i]=diff;
-diffData.data[i+1]=0;
-diffData.data[i+2]=255-diff;
-}else{
-diffData.data[i]=255;
-diffData.data[i+1]=0;
-diffData.data[i+2]=0;
-}
-
-diffData.data[i+3]=255;
-}else{
-diffData.data[i]=0;
-diffData.data[i+1]=0;
-diffData.data[i+2]=0;
-diffData.data[i+3]=255;
+if(Math.abs(r1-r2)>30){
+data1.data[i]=255;
+data1.data[i+1]=0;
+data1.data[i+2]=0;
+diffCount++;
 }
 }
 
-ctx.putImageData(diffData,0,0);
+ctx.putImageData(data1,0,0);
 
-let percent=((diffPixels/totalPixels)*100).toFixed(2);
+diffPixel=diffCount;
+diffPercent=((diffCount/(canvas.width*canvas.height))*100).toFixed(2);
 
-resultText.innerHTML=
-"คิดเป็น: "+percent+" %";
+document.getElementById("result").innerHTML=
+"Difference: "+diffPercent+"%";
+
+saveToSheet();
+}
+
+function saveToSheet(){
+
+fetch(scriptURL,{
+method:"POST",
+body:JSON.stringify({
+name:selectedData.name,
+dx:selectedData.dx,
+weight:selectedData.weight,
+height:selectedData.height,
+bmi:selectedData.bmi,
+diffPercent:diffPercent,
+pixel:diffPixel
+})
+});
+}
+
+function loadChart(name){
+
+fetch(scriptURL+"?type=meals")
+.then(res=>res.json())
+.then(data=>{
+
+let labels=[];
+let values=[];
+
+for(let i=1;i<data.length;i++){
+if(data[i][1]===name){
+labels.push(new Date(data[i][0]).toLocaleDateString());
+values.push(data[i][6]);
 }
 }
+
+document.getElementById("chartCanvas").remove();
+let canvas=document.createElement("canvas");
+canvas.id="chartCanvas";
+document.querySelectorAll(".section")[4].appendChild(canvas);
+
+new Chart(canvas,{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:"Diff %",
+data:values
+}]
 }
+});
+});
+}
+
+window.onload=function(){
+loadPatients();
+}
+
 </script>
 
 </body>
 </html>
-
-
