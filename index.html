@@ -294,11 +294,9 @@ data1.data[i+3]=25;
 ctx.putImageData(data1,0,0);
 
 let diffPercent=((diffCount/(width*height))*100).toFixed(2);
-let eatPercent=(100-diffPercent).toFixed(2);
 
 result.innerHTML=
-"Difference: "+diffPercent+"%<br>"+
-"รับประทานได้ประมาณ: "+eatPercent+"%";
+"Difference: "+diffPercent+"%<br>"
 
 fetch(scriptURL,{
 method:"POST",
@@ -385,4 +383,5 @@ window.onload=loadPatients;
 
 </body>
 </html>
+
 
