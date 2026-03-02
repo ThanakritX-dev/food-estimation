@@ -24,61 +24,50 @@ background:white;
 padding:25px;
 margin:20px auto;
 width:100%;
-max-width:750px;
+max-width:900px;
 border-radius:20px;
 box-shadow:0 15px 35px rgba(0,0,0,0.08);
 }
 
-.image-row{
-display:flex;
-flex-wrap:wrap;
-justify-content:center;
-gap:40px;
-}
-
-.image-box{
-display:flex;
-flex-direction:column;
-align-items:center;
-}
-
-.image-box img{
-width:300px;
-max-width:100%;
-border-radius:15px;
-margin-bottom:10px;
-box-shadow:0 10px 25px rgba(0,0,0,0.1);
-}
-
-input[type="file"]{
-margin-top:5px;
+select,input[type="date"]{
+padding:10px 12px;
+border-radius:10px;
+border:1px solid #dfe6e9;
+margin:5px;
 }
 
 button{
-padding:12px 25px;
+padding:10px 20px;
 border:none;
 border-radius:12px;
 background:linear-gradient(135deg,#4facfe,#00f2fe);
 color:white;
 font-weight:600;
 cursor:pointer;
-margin-top:10px;
+margin:5px;
 }
 
-.badge{
+button:hover{opacity:0.9;}
+
+#patientInfo{
+margin-top:15px;
+background:#f8fbff;
+padding:15px;
+border-radius:15px;
 display:inline-block;
-padding:8px 15px;
-border-radius:20px;
-color:white;
-font-size:14px;
-margin-top:8px;
+min-width:250px;
+box-shadow:0 5px 15px rgba(0,0,0,0.05);
 }
 
-.green{background:#2ecc71;}
-.orange{background:#f39c12;}
-.red{background:#e74c3c;}
+.stat-box{
+margin-top:15px;
+font-size:16px;
+font-weight:600;
+}
 
-canvas{margin-top:20px;}
+canvas{
+margin-top:20px;
+}
 </style>
 </head>
 
@@ -87,41 +76,34 @@ canvas{margin-top:20px;}
 <h2>Food Estimator Dashboard</h2>
 
 <div class="section">
+
 <h3>เลือกคนไข้</h3>
+
 <select id="patientSelect">
 <option value="">-- เลือกคนไข้ --</option>
 </select>
+
+<br>
+
+<label>จาก:</label>
+<input type="date" id="startDate">
+
+<label>ถึง:</label>
+<input type="date" id="endDate">
+
+<br>
+
+<button onclick="loadFilteredChart()">ดูกราฟ</button>
+<button onclick="resetDate()">ดูทั้งหมด</button>
+
 <div id="patientInfo"></div>
+
+<div class="stat-box" id="avgResult"></div>
+
 </div>
 
 <div class="section">
-<h3>Before / After</h3>
-
-<div class="image-row">
-
-<div class="image-box">
-<h4>Before</h4>
-<img id="beforeImg">
-<input type="file" accept="image/*" id="beforeInput">
-</div>
-
-<div class="image-box">
-<h4>After</h4>
-<img id="afterImg">
-<input type="file" accept="image/*" id="afterInput">
-</div>
-
-</div>
-</div>
-
-<div class="section">
-<button onclick="compareImages()">คำนวณ</button>
-<div id="result"></div>
-<canvas id="diffCanvas"></canvas>
-</div>
-
-<div class="section">
-<h3>Dashboard</h3>
+<h3>Dashboard การกินอาหาร (%)</h3>
 <canvas id="chartCanvas"></canvas>
 </div>
 
@@ -129,12 +111,10 @@ canvas{margin-top:20px;}
 
 const scriptURL="https://script.google.com/macros/s/AKfycbzSEKwDgxyvTFj2M-5d-Xfp6aLrB4946GuloIb0wzqyYTrk9EivMbkU0oUuarAqXoeb8Q/exec";
 
-let selectedData={};
-let diffPercent=0;
-let diffPixel=0;
+let selectedName="";
 let chartInstance=null;
 
-// โหลดรายชื่อ
+// ---------------- โหลดรายชื่อคนไข้ ----------------
 function loadPatients(){
 fetch(scriptURL+"?type=patients")
 .then(res=>res.json())
@@ -152,134 +132,44 @@ select.appendChild(option);
 });
 }
 
-// เลือกคนไข้
-patientSelect.addEventListener("change",function(){
+// ---------------- เลือกคนไข้ ----------------
+document.getElementById("patientSelect").addEventListener("change",function(){
+
 if(!this.value) return;
 
 let row=JSON.parse(this.value);
+
+selectedName=row[0];
+
 let bmi=(row[2]/((row[3]/100)*(row[3]/100))).toFixed(2);
 
-selectedData={
-name:row[0],
-dx:row[1],
-weight:row[2],
-height:row[3],
-bmi:bmi
-};
-
-patientInfo.innerHTML=
+document.getElementById("patientInfo").innerHTML=
 "DX: "+row[1]+"<br>"+
 "Weight: "+row[2]+" kg<br>"+
 "Height: "+row[3]+" cm<br>"+
 "BMI: "+bmi;
 
-loadChart(row[0]);
+loadFilteredChart(); // โหลดกราฟทันทีโดยไม่ต้องอัพรูป
+
 });
 
-// โหลดรูป
-function loadImage(input,img){
-let file=input.files[0];
-if(!file) return;
-
-let reader=new FileReader();
-reader.onload=e=>img.src=e.target.result;
-reader.readAsDataURL(file);
+// ---------------- รีเซ็ตช่วงวันที่ ----------------
+function resetDate(){
+document.getElementById("startDate").value="";
+document.getElementById("endDate").value="";
+loadFilteredChart();
 }
 
-beforeInput.onchange=()=>loadImage(beforeInput,beforeImg);
-afterInput.onchange=()=>loadImage(afterInput,afterImg);
+// ---------------- โหลดกราฟแบบกรองวันที่ ----------------
+function loadFilteredChart(){
 
-// เปรียบเทียบภาพ
-function compareImages(){
-
-if(!selectedData.name){
-alert("กรุณาเลือกคนไข้ก่อน");
+if(!selectedName){
+alert("กรุณาเลือกคนไข้");
 return;
 }
 
-if(!beforeImg.src || !afterImg.src){
-alert("กรุณาเลือกรูป Before และ After");
-return;
-}
-
-result.innerHTML="กำลังบันทึก...";
-
-let canvas=diffCanvas;
-let ctx=canvas.getContext("2d");
-
-let width=Math.min(beforeImg.naturalWidth,afterImg.naturalWidth);
-let height=Math.min(beforeImg.naturalHeight,afterImg.naturalHeight);
-
-canvas.width=width;
-canvas.height=height;
-
-ctx.drawImage(beforeImg,0,0,width,height);
-let data1=ctx.getImageData(0,0,width,height);
-
-ctx.drawImage(afterImg,0,0,width,height);
-let data2=ctx.getImageData(0,0,width,height);
-
-let diffCount=0;
-
-for(let i=0;i<data1.data.length;i+=4){
-
-let diff=
-Math.abs(data1.data[i]-data2.data[i])+
-Math.abs(data1.data[i+1]-data2.data[i+1])+
-Math.abs(data1.data[i+2]-data2.data[i+2]);
-
-if(diff>60){
-data1.data[i]=255;
-data1.data[i+1]=0;
-data1.data[i+2]=0;
-diffCount++;
-}
-}
-
-ctx.putImageData(data1,0,0);
-
-diffPixel=diffCount;
-diffPercent=((diffCount/(width*height))*100).toFixed(2);
-
-saveToSheet();
-}
-
-// บันทึกข้อมูล
-function saveToSheet(){
-
-fetch(scriptURL,{
-method:"POST",
-body:JSON.stringify({
-date:new Date().toISOString(),
-name:selectedData.name,
-dx:selectedData.dx,
-weight:selectedData.weight,
-height:selectedData.height,
-bmi:selectedData.bmi,
-diffPercent:diffPercent,
-pixel:diffPixel
-})
-})
-.then(()=>{
-
-let level="";
-let badgeClass="";
-
-if(diffPercent<20){level="กินเกือบหมด";badgeClass="green";}
-else if(diffPercent<50){level="กินประมาณครึ่งหนึ่ง";badgeClass="orange";}
-else{level="เหลืออาหารเยอะ";badgeClass="red";}
-
-result.innerHTML=
-"Difference: "+diffPercent+"%<br>"+
-'<div class="badge '+badgeClass+'">'+level+'</div>'+
-"<br>บันทึกสำเร็จ ✅";
-
-loadChart(selectedData.name);
-});
-}
-
-// โหลดกราฟ
-function loadChart(name){
+let start=document.getElementById("startDate").value;
+let end=document.getElementById("endDate").value;
 
 fetch(scriptURL+"?type=meals")
 .then(res=>res.json())
@@ -287,43 +177,95 @@ fetch(scriptURL+"?type=meals")
 
 let labels=[];
 let values=[];
+let sum=0;
+let count=0;
 
 for(let i=1;i<data.length;i++){
-if(data[i][1]===name){
-labels.push(new Date(data[i][0]).toLocaleDateString());
-values.push(parseFloat(data[i][6]));
+
+let rowDate=new Date(data[i][0]);
+let rowName=data[i][1];
+let diff=parseFloat(data[i][6]);
+
+if(rowName===selectedName){
+
+if(start && rowDate < new Date(start)) continue;
+if(end && rowDate > new Date(end+"T23:59:59")) continue;
+
+labels.push(rowDate.toLocaleDateString());
+values.push(diff);
+
+sum+=diff;
+count++;
 }
 }
+
+drawChart(labels,values);
+
+let avg=(count>0)?(sum/count).toFixed(2):0;
+document.getElementById("avgResult").innerHTML=
+"จำนวนมื้อ: "+count+" มื้อ | ค่าเฉลี่ยการเหลืออาหาร: "+avg+" %";
+
+});
+}
+
+// ---------------- วาดกราฟ ----------------
+function drawChart(labels,values){
 
 if(chartInstance){
 chartInstance.destroy();
 }
 
-chartInstance=new Chart(chartCanvas,{
+let ctx=document.getElementById("chartCanvas").getContext("2d");
+
+let gradient=ctx.createLinearGradient(0,0,0,400);
+gradient.addColorStop(0,"rgba(79,172,254,0.4)");
+gradient.addColorStop(1,"rgba(0,242,254,0.05)");
+
+chartInstance=new Chart(ctx,{
 type:"line",
 data:{
 labels:labels,
-datasets:[{
+datasets:[
+{
 label:"Diff %",
 data:values,
-tension:0.3,
-borderWidth:3,
-pointRadius:5
-}]
+borderColor:"#4facfe",
+backgroundColor:gradient,
+tension:0.4,
+fill:true,
+pointRadius:5,
+borderWidth:3
+},
+{
+label:"เป้าหมาย (20%)",
+data:new Array(values.length).fill(20),
+borderColor:"#e74c3c",
+borderDash:[6,6],
+pointRadius:0,
+borderWidth:2
+}
+]
 },
 options:{
 responsive:true,
+plugins:{
+legend:{position:'top'}
+},
 scales:{
-y:{beginAtZero:true,max:100}
+y:{
+beginAtZero:true,
+max:100
+}
 }
 }
 });
-});
+
 }
 
+// ---------------- โหลดครั้งแรก ----------------
 window.onload=loadPatients;
 
 </script>
+
 </body>
 </html>
-
