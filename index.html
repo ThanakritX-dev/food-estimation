@@ -56,17 +56,6 @@ margin:5px;
 <h3>เลือกคนไข้</h3>
 <select id="patientSelect"></select>
 
-<br>
-
-<label>จาก:</label>
-<input type="date" id="startDate">
-<label>ถึง:</label>
-<input type="date" id="endDate">
-
-<br>
-
-<button onclick="loadChart()">ดูกราฟ</button>
-<button onclick="resetDate()">ดูทั้งหมด</button>
 
 <div id="patientInfo"></div>
 
@@ -96,6 +85,17 @@ margin:5px;
 
 <div class="section">
 <h3>Dashboard การกินอาหาร (%)</h3>
+
+<div style="margin-bottom:15px;">
+จาก:
+<input type="date" id="startDate">
+ถึง:
+<input type="date" id="endDate">
+
+<button onclick="loadChart()">ดูกราฟ</button>
+<button onclick="resetDate()">ดูทั้งหมด</button>
+</div>
+
 <canvas id="chartCanvas"></canvas>
 </div>
 
@@ -192,13 +192,29 @@ let data2=ctx.getImageData(0,0,width,height);
 let diffCount=0;
 
 for(let i=0;i<data1.data.length;i+=4){
-let diff=
-Math.abs(data1.data[i]-data2.data[i])+
-Math.abs(data1.data[i+1]-data2.data[i+1])+
-Math.abs(data1.data[i+2]-data2.data[i+2]);
 
-if(diff>60) diffCount++;
+let r1=data1.data[i];
+let g1=data1.data[i+1];
+let b1=data1.data[i+2];
+
+let r2=data2.data[i];
+let g2=data2.data[i+1];
+let b2=data2.data[i+2];
+
+let diff=Math.abs(r1-r2)+Math.abs(g1-g2)+Math.abs(b1-b2);
+
+if(diff>60){
+
+// 🔴 ทำให้เป็นสีแดง
+data1.data[i]=255;
+data1.data[i+1]=0;
+data1.data[i+2]=0;
+
+diffCount++;
 }
+}
+
+ctx.putImageData(data1,0,0);
 
 let diffPercent=((diffCount/(width*height))*100).toFixed(2);
 
@@ -290,4 +306,5 @@ window.onload=loadPatients;
 
 </body>
 </html>
+
 
