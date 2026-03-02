@@ -44,6 +44,58 @@ padding:8px;
 border-radius:8px;
 margin:5px;
 }
+
+.image-compare{
+display:flex;
+justify-content:center;
+align-items:flex-start;
+gap:40px;
+margin-top:20px;
+flex-wrap:wrap;
+}
+
+.image-card{
+background:#f9fbff;
+padding:20px;
+border-radius:20px;
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
+width:320px;
+transition:0.3s;
+}
+
+.image-card:hover{
+transform:translateY(-5px);
+}
+
+.image-title{
+font-weight:700;
+margin-bottom:10px;
+font-size:16px;
+letter-spacing:1px;
+}
+
+.before-title{
+color:#3498db;
+}
+
+.after-title{
+color:#2ecc71;
+}
+
+.diff-section{
+margin-top:30px;
+padding:25px;
+background:linear-gradient(135deg,#fdfbfb,#ebedee);
+border-radius:20px;
+box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+
+.diff-title{
+font-weight:700;
+margin-bottom:15px;
+font-size:18px;
+color:#e74c3c;
+}
 </style>
 </head>
 
@@ -61,19 +113,26 @@ margin:5px;
 
 </div>
 
-<div class="section">
+<div class="image-compare">
 
-<h3>ถ่ายรูปบันทึกมื้ออาหาร</h3>
-
+<div class="image-card">
+<div class="image-title before-title">BEFORE (ก่อนทาน)</div>
 <input type="file" accept="image/*" id="beforeInput">
-<input type="file" accept="image/*" id="afterInput">
-
-<br>
-
 <img id="beforeImg">
-<img id="afterImg">
+</div>
 
-<br>
+<div class="image-card">
+<div class="image-title after-title">AFTER (หลังทาน)</div>
+<input type="file" accept="image/*" id="afterInput">
+<img id="afterImg">
+</div>
+
+</div>
+
+<div class="diff-section">
+<div class="diff-title">DIFFERENCE HIGHLIGHT</div>
+<canvas id="diffCanvas"></canvas>
+</div>
 
 <button onclick="compareImages()">คำนวณและบันทึก</button>
 
@@ -203,14 +262,19 @@ let b2=data2.data[i+2];
 
 let diff=Math.abs(r1-r2)+Math.abs(g1-g2)+Math.abs(b1-b2);
 
-if(diff>60){
+if(diff>90){   // เพิ่ม threshold ให้แม่นขึ้น
 
-// 🔴 ทำให้เป็นสีแดง
+// ทำเป็น overlay โปร่งใส
 data1.data[i]=255;
 data1.data[i+1]=0;
 data1.data[i+2]=0;
+data1.data[i+3]=120;
 
 diffCount++;
+}
+else{
+// ทำให้พื้นหลังจางลง
+data1.data[i+3]=40;
 }
 }
 
@@ -306,5 +370,6 @@ window.onload=loadPatients;
 
 </body>
 </html>
+
 
 
