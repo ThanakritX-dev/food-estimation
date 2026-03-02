@@ -133,6 +133,21 @@ z-index:0;
 position:relative;
 z-index:1;
 }
+.patient-title-box{
+display:inline-block;
+background:rgba(255,255,255,0.75);
+backdrop-filter:blur(6px);
+padding:12px 30px;
+border-radius:20px;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
+margin-bottom:20px;
+}
+
+.patient-title-box h3{
+margin:0;
+color:#2c3e50;
+font-weight:700;
+}
   
 #result{
 margin-top:15px;
@@ -149,7 +164,9 @@ font-size:16px;
 
 <div class="section patient-bg">
 
-<h3>Patient Information (ข้อมูลผู้ป่วย)</h3>
+<div class="patient-title-box">
+    <h3>Patient Information (ข้อมูลผู้ป่วย)</h3>
+</div>
 
 <div style="display:flex;justify-content:center;margin-bottom:20px;">
 <select id="patientSelect"></select>
@@ -452,6 +469,7 @@ window.onload=loadPatients;
 
 </body>
 </html>
+
 
 
 
