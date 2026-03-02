@@ -110,6 +110,31 @@ font-size:20px;
 color:#e74c3c;
 }
 
+.patient-bg{
+position:relative;
+overflow:hidden;
+background-image:url('https://png.pngtree.com/thumb_back/fh260/back_our/20190619/ourmid/pngtree-european-cute-cartoon-catering-advertising-details-page-watercolor-background-material-image_135714.jpg');
+background-size:cover;
+background-position:center;
+}
+
+.patient-bg::before{
+content:"";
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(255,255,255,0.85); /* ความจาง */
+backdrop-filter:blur(2px);
+z-index:0;
+}
+
+.patient-bg > *{
+position:relative;
+z-index:1;
+}
+  
 #result{
 margin-top:15px;
 font-weight:600;
@@ -121,9 +146,9 @@ font-size:16px;
 
 <body>
 
-<h2>Food Estimator Dashboard</h2>
+<h2>การประเมินปริมาณการรับประทานอาหารโดยใช้ภาพถ่ายในผู้สูงอายุ</h2>
 
-<div class="section">
+<div class="section patient-bg">
 
 <h3>Patient Information (ข้อมูลผู้ป่วย)</h3>
 
@@ -428,6 +453,7 @@ window.onload=loadPatients;
 
 </body>
 </html>
+
 
 
 
