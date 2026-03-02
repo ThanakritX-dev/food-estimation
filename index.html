@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Food Estimator</title>
+<title>Food Estimator Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -11,30 +11,56 @@ font-family:Arial;
 background:#f4f6f9;
 text-align:center;
 padding:20px;
+margin:0;
 }
+
+h2{
+margin-bottom:10px;
+}
+
 .section{
 background:white;
 padding:20px;
 margin:15px auto;
-width:90%;
-max-width:500px;
-border-radius:10px;
-box-shadow:0 5px 15px rgba(0,0,0,0.1);
+width:95%;
+max-width:600px;
+border-radius:15px;
+box-shadow:0 5px 20px rgba(0,0,0,0.1);
 }
+
 button{
-padding:10px 15px;
-margin:5px;
+padding:12px 18px;
+margin:8px;
 border:none;
-border-radius:5px;
+border-radius:8px;
 background:#3498db;
 color:white;
 cursor:pointer;
+font-size:16px;
 }
+
 button:hover{
 background:#2980b9;
 }
+
+select,input{
+padding:8px;
+margin:8px;
+}
+
 canvas{
 max-width:100%;
+margin-top:10px;
+}
+
+img{
+margin-top:10px;
+border-radius:10px;
+}
+
+#result{
+font-size:18px;
+font-weight:bold;
 margin-top:10px;
 }
 </style>
@@ -54,13 +80,13 @@ margin-top:10px;
 <div class="section">
 <h3>Before</h3>
 <input type="file" accept="image/*" id="beforeInput">
-<img id="beforeImg" width="200">
+<img id="beforeImg" width="250">
 </div>
 
 <div class="section">
 <h3>After</h3>
 <input type="file" accept="image/*" id="afterInput">
-<img id="afterImg" width="200">
+<img id="afterImg" width="250">
 </div>
 
 <div class="section">
@@ -76,12 +102,13 @@ margin-top:10px;
 
 <script>
 
-const scriptURL="https://script.google.com/macros/s/AKfycbzSEKwDgxyvTFj2M-5d-Xfp6aLrB4946GuloIb0wzqyYTrk9EivMbkU0oUuarAqXoeb8Q/exec";
+const scriptURL="YOUR_SCRIPT_URL_HERE"; // 🔴 ใส่ของคุณ
 
 let selectedData={};
 let diffPercent=0;
 let diffPixel=0;
 
+// ---------------- โหลดรายชื่อคนไข้ ----------------
 function loadPatients(){
 fetch(scriptURL+"?type=patients")
 .then(res=>res.json())
@@ -99,8 +126,10 @@ select.appendChild(option);
 });
 }
 
+// ---------------- เลือกคนไข้ ----------------
 document.getElementById("patientSelect").addEventListener("change",function(){
 if(!this.value) return;
+
 let row=JSON.parse(this.value);
 
 let bmi=(row[2]/((row[3]/100)*(row[3]/100))).toFixed(2);
@@ -114,15 +143,19 @@ bmi:bmi
 };
 
 document.getElementById("patientInfo").innerHTML=
-"DX: "+row[1]+"<br>Weight: "+row[2]+" kg"+
-"<br>Height: "+row[3]+" cm"+
-"<br>BMI: "+bmi;
+"DX: "+row[1]+"<br>"+
+"Weight: "+row[2]+" kg<br>"+
+"Height: "+row[3]+" cm<br>"+
+"BMI: "+bmi;
 
 loadChart(row[0]);
 });
 
+// ---------------- โหลดรูป ----------------
 function loadImage(input,img){
 let file=input.files[0];
+if(!file) return;
+
 let reader=new FileReader();
 reader.onload=function(e){
 img.src=e.target.result;
@@ -133,7 +166,18 @@ reader.readAsDataURL(file);
 beforeInput.onchange=()=>loadImage(beforeInput,beforeImg);
 afterInput.onchange=()=>loadImage(afterInput,afterImg);
 
+// ---------------- เปรียบเทียบภาพ ----------------
 function compareImages(){
+
+if(!selectedData.name){
+alert("กรุณาเลือกคนไข้ก่อน");
+return;
+}
+
+if(!beforeImg.src || !afterImg.src){
+alert("กรุณาเลือกรูป Before และ After");
+return;
+}
 
 let img1=beforeImg;
 let img2=afterImg;
@@ -141,23 +185,33 @@ let img2=afterImg;
 let canvas=document.getElementById("diffCanvas");
 let ctx=canvas.getContext("2d");
 
-canvas.width=img1.width;
-canvas.height=img1.height;
+let width=Math.min(img1.width,img2.width);
+let height=Math.min(img1.height,img2.height);
 
-ctx.drawImage(img1,0,0);
+canvas.width=width;
+canvas.height=height;
 
-let data1=ctx.getImageData(0,0,canvas.width,canvas.height);
+ctx.drawImage(img1,0,0,width,height);
+let data1=ctx.getImageData(0,0,width,height);
 
-ctx.drawImage(img2,0,0);
-let data2=ctx.getImageData(0,0,canvas.width,canvas.height);
+ctx.drawImage(img2,0,0,width,height);
+let data2=ctx.getImageData(0,0,width,height);
 
 let diffCount=0;
 
 for(let i=0;i<data1.data.length;i+=4){
-let r1=data1.data[i];
-let r2=data2.data[i];
 
-if(Math.abs(r1-r2)>30){
+let r1=data1.data[i];
+let g1=data1.data[i+1];
+let b1=data1.data[i+2];
+
+let r2=data2.data[i];
+let g2=data2.data[i+1];
+let b2=data2.data[i+2];
+
+let diff=Math.abs(r1-r2)+Math.abs(g1-g2)+Math.abs(b1-b2);
+
+if(diff>60){
 data1.data[i]=255;
 data1.data[i+1]=0;
 data1.data[i+2]=0;
@@ -168,19 +222,28 @@ diffCount++;
 ctx.putImageData(data1,0,0);
 
 diffPixel=diffCount;
-diffPercent=((diffCount/(canvas.width*canvas.height))*100).toFixed(2);
+diffPercent=((diffCount/(width*height))*100).toFixed(2);
+
+let level="";
+if(diffPercent<20) level="กินเกือบหมด";
+else if(diffPercent<50) level="กินประมาณครึ่งหนึ่ง";
+else level="เหลืออาหารเยอะ";
 
 document.getElementById("result").innerHTML=
-"Difference: "+diffPercent+"%";
+"Difference: "+diffPercent+"%<br>"+level;
 
 saveToSheet();
 }
 
+// ---------------- บันทึกข้อมูล ----------------
 function saveToSheet(){
+
+document.getElementById("result").innerHTML+="<br>กำลังบันทึก...";
 
 fetch(scriptURL,{
 method:"POST",
 body:JSON.stringify({
+date:new Date().toISOString(),
 name:selectedData.name,
 dx:selectedData.dx,
 weight:selectedData.weight,
@@ -189,9 +252,14 @@ bmi:selectedData.bmi,
 diffPercent:diffPercent,
 pixel:diffPixel
 })
+})
+.then(()=>{
+document.getElementById("result").innerHTML+="<br>บันทึกสำเร็จ ✅";
+loadChart(selectedData.name);
 });
 }
 
+// ---------------- โหลดกราฟ ----------------
 function loadChart(name){
 
 fetch(scriptURL+"?type=meals")
@@ -204,7 +272,7 @@ let values=[];
 for(let i=1;i<data.length;i++){
 if(data[i][1]===name){
 labels.push(new Date(data[i][0]).toLocaleDateString());
-values.push(data[i][6]);
+values.push(parseFloat(data[i][6]));
 }
 }
 
@@ -219,13 +287,28 @@ data:{
 labels:labels,
 datasets:[{
 label:"Diff %",
-data:values
+data:values,
+tension:0.3,
+fill:false
 }]
+},
+options:{
+responsive:true,
+plugins:{
+legend:{display:true}
+},
+scales:{
+y:{
+beginAtZero:true,
+max:100
+}
+}
 }
 });
 });
 }
 
+// ---------------- โหลดครั้งแรก ----------------
 window.onload=function(){
 loadPatients();
 }
