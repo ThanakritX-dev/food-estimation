@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Food Estimator Dashboard</title>
+<title>การประเมินปริมาณการรับประทานอาหารโดยใช้ภาพถ่ายในผู้สูงอายุ</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -125,9 +125,52 @@ font-size:16px;
 
 <div class="section">
 
-<h3>เลือกคนไข้</h3>
+<h3>Patient Information (ข้อมูลผู้ป่วย)</h3>
+
+<div style="display:flex;justify-content:center;margin-bottom:20px;">
 <select id="patientSelect"></select>
-<div id="patientInfo"></div>
+</div>
+
+<div id="patientCard" style="
+display:none;
+background:linear-gradient(135deg,#ffffff,#f2f6ff);
+padding:25px;
+border-radius:20px;
+box-shadow:0 15px 30px rgba(0,0,0,0.08);
+max-width:500px;
+margin:0 auto;
+">
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+<h2 id="pName" style="margin:0;"></h2>
+<span id="pDX" style="
+background:#ff7675;
+color:white;
+padding:6px 12px;
+border-radius:20px;
+font-size:13px;
+font-weight:600;
+"></span>
+</div>
+
+<div style="display:flex;justify-content:space-between;text-align:center;">
+<div>
+<div style="font-size:14px;color:#888;">Weight</div>
+<div id="pWeight" style="font-size:20px;font-weight:700;"></div>
+</div>
+
+<div>
+<div style="font-size:14px;color:#888;">Height</div>
+<div id="pHeight" style="font-size:20px;font-weight:700;"></div>
+</div>
+
+<div>
+<div style="font-size:14px;color:#888;">BMI</div>
+<div id="pBMI" style="font-size:20px;font-weight:700;"></div>
+</div>
+</div>
+
+</div>
 
 </div>
 
@@ -216,11 +259,13 @@ height:row[3],
 bmi:bmi
 };
 
-patientInfo.innerHTML=
-"DX: "+row[1]+"<br>"+
-"Weight: "+row[2]+" kg<br>"+
-"Height: "+row[3]+" cm<br>"+
-"BMI: "+bmi;
+document.getElementById("patientCard").style.display="block";
+
+pName.innerText = row[0];
+pDX.innerText = row[1];
+pWeight.innerText = row[2] + " kg";
+pHeight.innerText = row[3] + " cm";
+pBMI.innerText = bmi;
 
 loadChart();
 });
@@ -239,12 +284,12 @@ reader.readAsDataURL(file);
 function compareImages(){
 
 if(!selectedName){
-alert("เลือกคนไข้ก่อน");
+alert("กรุณาเลือกข้อมูลผู้ป่วย");
 return;
 }
 
 if(!beforeImg.src || !afterImg.src){
-alert("เลือกรูปก่อน");
+alert("กรุณาเลือกรูปก่อน");
 return;
 }
 
@@ -383,5 +428,6 @@ window.onload=loadPatients;
 
 </body>
 </html>
+
 
 
