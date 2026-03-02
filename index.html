@@ -2,75 +2,63 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Food Estimator/Dashboard</title>
+<title>Food Estimator Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+
 body{
 font-family:'Segoe UI',sans-serif;
-background:linear-gradient(135deg,#e8f0ff,#f6f9ff);
+background:linear-gradient(135deg,#eef2ff,#f8fbff);
 text-align:center;
-padding:20px;
+padding:30px;
 color:#2c3e50;
+}
+
+h2{
+margin-bottom:10px;
 }
 
 .section{
 background:white;
-padding:20px;
-margin:20px auto;
-max-width:900px;
-border-radius:20px;
-box-shadow:0 15px 35px rgba(0,0,0,0.08);
+padding:25px;
+margin:25px auto;
+max-width:1000px;
+border-radius:25px;
+box-shadow:0 20px 40px rgba(0,0,0,0.08);
 }
 
-button{
-padding:10px 20px;
-border:none;
-border-radius:12px;
-background:linear-gradient(135deg,#4facfe,#00f2fe);
-color:white;
-cursor:pointer;
-margin:5px;
-}
-
-img{
-max-width:250px;
-margin-top:10px;
-border-radius:15px;
-}
-
-input,select{
+select,input{
 padding:8px;
 border-radius:8px;
 margin:5px;
+border:1px solid #dfe6ff;
 }
 
 .image-compare{
 display:flex;
 justify-content:center;
-align-items:flex-start;
-gap:40px;
-margin-top:20px;
-flex-wrap:wrap;
+align-items:stretch;
+margin-top:30px;
+border-radius:25px;
+overflow:hidden;
+box-shadow:0 15px 35px rgba(0,0,0,0.08);
 }
 
 .image-card{
+flex:1;
+padding:25px;
 background:#f9fbff;
-padding:20px;
-border-radius:20px;
-box-shadow:0 10px 25px rgba(0,0,0,0.08);
-width:320px;
-transition:0.3s;
 }
 
-.image-card:hover{
-transform:translateY(-5px);
+.image-card:first-child{
+border-right:4px solid #e0e6ff;
 }
 
 .image-title{
 font-weight:700;
-margin-bottom:10px;
-font-size:16px;
+margin-bottom:15px;
+font-size:18px;
 letter-spacing:1px;
 }
 
@@ -82,20 +70,52 @@ color:#3498db;
 color:#2ecc71;
 }
 
+img{
+max-width:100%;
+border-radius:15px;
+margin-top:15px;
+box-shadow:0 10px 25px rgba(0,0,0,0.1);
+}
+
+button{
+padding:12px 30px;
+border:none;
+border-radius:14px;
+background:linear-gradient(135deg,#4facfe,#00f2fe);
+color:white;
+cursor:pointer;
+margin-top:25px;
+font-weight:600;
+font-size:15px;
+transition:0.3s;
+}
+
+button:hover{
+transform:translateY(-3px);
+box-shadow:0 10px 25px rgba(0,0,0,0.15);
+}
+
 .diff-section{
-margin-top:30px;
-padding:25px;
-background:linear-gradient(135deg,#fdfbfb,#ebedee);
-border-radius:20px;
-box-shadow:0 10px 30px rgba(0,0,0,0.08);
+margin-top:40px;
+padding:30px;
+background:linear-gradient(135deg,#fff6f6,#ffecec);
+border-radius:25px;
+box-shadow:0 15px 35px rgba(0,0,0,0.08);
 }
 
 .diff-title{
 font-weight:700;
-margin-bottom:15px;
-font-size:18px;
+margin-bottom:20px;
+font-size:20px;
 color:#e74c3c;
 }
+
+#result{
+margin-top:15px;
+font-weight:600;
+font-size:16px;
+}
+
 </style>
 </head>
 
@@ -107,11 +127,11 @@ color:#e74c3c;
 
 <h3>เลือกคนไข้</h3>
 <select id="patientSelect"></select>
-
-
 <div id="patientInfo"></div>
 
 </div>
+
+<div class="section">
 
 <div class="image-compare">
 
@@ -129,16 +149,16 @@ color:#e74c3c;
 
 </div>
 
+<div style="text-align:center;">
+<button onclick="compareImages()">คำนวณและบันทึก</button>
+</div>
+
+<div id="result"></div>
+
 <div class="diff-section">
 <div class="diff-title">DIFFERENCE HIGHLIGHT</div>
 <canvas id="diffCanvas"></canvas>
 </div>
-
-<button onclick="compareImages()">คำนวณและบันทึก</button>
-
-<div id="result"></div>
-
-<canvas id="diffCanvas"></canvas>
 
 </div>
 
@@ -150,7 +170,6 @@ color:#e74c3c;
 <input type="date" id="startDate">
 ถึง:
 <input type="date" id="endDate">
-
 <button onclick="loadChart()">ดูกราฟ</button>
 <button onclick="resetDate()">ดูทั้งหมด</button>
 </div>
@@ -165,7 +184,6 @@ let selectedName="";
 let selectedData={};
 let chartInstance=null;
 
-// โหลดรายชื่อ
 function loadPatients(){
 fetch(scriptURL+"?type=patients")
 .then(res=>res.json())
@@ -182,7 +200,6 @@ select.appendChild(option);
 });
 }
 
-// เลือกคนไข้
 patientSelect.addEventListener("change",function(){
 if(!this.value) return;
 
@@ -208,7 +225,6 @@ patientInfo.innerHTML=
 loadChart();
 });
 
-// โหลดรูป
 beforeInput.onchange=()=>loadImage(beforeInput,beforeImg);
 afterInput.onchange=()=>loadImage(afterInput,afterImg);
 
@@ -220,7 +236,6 @@ reader.onload=e=>img.src=e.target.result;
 reader.readAsDataURL(file);
 }
 
-// คำนวณและบันทึก
 function compareImages(){
 
 if(!selectedName){
@@ -233,7 +248,7 @@ alert("เลือกรูปก่อน");
 return;
 }
 
-let canvas=diffCanvas;
+let canvas=document.getElementById("diffCanvas");
 let ctx=canvas.getContext("2d");
 
 let width=Math.min(beforeImg.width,afterImg.width);
@@ -262,27 +277,28 @@ let b2=data2.data[i+2];
 
 let diff=Math.abs(r1-r2)+Math.abs(g1-g2)+Math.abs(b1-b2);
 
-if(diff>90){   // เพิ่ม threshold ให้แม่นขึ้น
+if(diff>90){
 
-// ทำเป็น overlay โปร่งใส
 data1.data[i]=255;
 data1.data[i+1]=0;
 data1.data[i+2]=0;
-data1.data[i+3]=120;
+data1.data[i+3]=160;
 
 diffCount++;
 }
 else{
-// ทำให้พื้นหลังจางลง
-data1.data[i+3]=40;
+data1.data[i+3]=25;
 }
 }
 
 ctx.putImageData(data1,0,0);
 
 let diffPercent=((diffCount/(width*height))*100).toFixed(2);
+let eatPercent=(100-diffPercent).toFixed(2);
 
-result.innerHTML="Difference: "+diffPercent+"%";
+result.innerHTML=
+"Difference: "+diffPercent+"%<br>"+
+"รับประทานได้ประมาณ: "+eatPercent+"%";
 
 fetch(scriptURL,{
 method:"POST",
@@ -304,7 +320,6 @@ loadChart();
 
 }
 
-// โหลดกราฟ
 function loadChart(){
 
 if(!selectedName) return;
@@ -370,6 +385,3 @@ window.onload=loadPatients;
 
 </body>
 </html>
-
-
-
