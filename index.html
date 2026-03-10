@@ -6,7 +6,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-
+/* --- สไตล์ดั้งเดิมของคุณทั้งหมด --- */
 body{
 font-family:'Segoe UI',sans-serif;
 background:linear-gradient(135deg,#eef2ff,#f8fbff);
@@ -15,9 +15,7 @@ padding:30px;
 color:#2c3e50;
 }
 
-h2{
-margin-bottom:10px;
-}
+h2{ margin-bottom:10px; }
 
 .section{
 background:white;
@@ -62,13 +60,8 @@ font-size:18px;
 letter-spacing:1px;
 }
 
-.before-title{
-color:#3498db;
-}
-
-.after-title{
-color:#2ecc71;
-}
+.before-title{ color:#3498db; }
+.after-title{ color:#2ecc71; }
 
 img{
 max-width:100%;
@@ -125,14 +118,12 @@ top:0;
 left:0;
 width:100%;
 height:100%;
-background:rgba(255,255,255,0); /* ความจาง */
+background:rgba(255,255,255,0);
 z-index:0;
 }
 
-.patient-bg > *{
-position:relative;
-z-index:1;
-}
+.patient-bg > *{ position:relative; z-index:1; }
+
 .patient-title-box{
 display:inline-block;
 background:rgba(255,255,255,0.75);
@@ -143,18 +134,12 @@ box-shadow:0 10px 30px rgba(0,0,0,0.1);
 margin-bottom:20px;
 }
 
-.patient-title-box h3{
-margin:0;
-color:#2c3e50;
-font-weight:700;
-}
-  
-#result{
-margin-top:15px;
-font-weight:600;
-font-size:16px;
-}
+.patient-title-box h3{ margin:0; color:#2c3e50; font-weight:700; }
+#result{ margin-top:15px; font-weight:600; font-size:16px; }
 
+/* ส่วนค้นหาเพิ่มเติม */
+.search-container { margin-bottom: 10px; }
+.search-container input { width: 150px; }
 </style>
 </head>
 
@@ -163,319 +148,243 @@ font-size:16px;
 <h2>การประเมินปริมาณการรับประทานอาหารโดยใช้ภาพถ่ายในผู้สูงอายุ</h2>
 
 <div class="section patient-bg">
+    <div class="patient-title-box">
+        <h3>Patient Information (ข้อมูลผู้ป่วย)</h3>
+    </div>
 
-<div class="patient-title-box">
-    <h3>Patient Information (ข้อมูลผู้ป่วย)</h3>
-</div>
+    <div class="search-container">
+        <input type="text" id="searchName" placeholder="🔍 ค้นหาชื่อ..." oninput="filterPatients()">
+        <input type="text" id="searchHN" placeholder="🔍 ค้นหา HN..." oninput="filterPatients()">
+    </div>
 
-<div style="display:flex;justify-content:center;margin-bottom:20px;">
-<select id="patientSelect"></select>
-</div>
+    <div style="display:flex;justify-content:center;margin-bottom:20px;">
+        <select id="patientSelect" style="min-width: 250px;"></select>
+    </div>
 
-<div id="patientCard" style="
-display:none;
-background:linear-gradient(135deg,#ffffff,#f2f6ff);
-padding:25px;
-border-radius:20px;
-box-shadow:0 15px 30px rgba(0,0,0,0.08);
-max-width:500px;
-margin:0 auto;
-">
-
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-<h2 id="pName" style="margin:0;"></h2>
-<span id="pDX" style="
-background:#ff7675;
-color:white;
-padding:6px 12px;
-border-radius:20px;
-font-size:13px;
-font-weight:600;
-"></span>
-</div>
-
-<div style="display:flex;justify-content:space-between;text-align:center;">
-<div>
-<div style="font-size:14px;color:#888;">Weight</div>
-<div id="pWeight" style="font-size:20px;font-weight:700;"></div>
-</div>
-
-<div>
-<div style="font-size:14px;color:#888;">Height</div>
-<div id="pHeight" style="font-size:20px;font-weight:700;"></div>
-</div>
-
-<div>
-<div style="font-size:14px;color:#888;">BMI</div>
-<div id="pBMI" style="font-size:20px;font-weight:700;"></div>
-</div>
-</div>
-
-</div>
-
+    <div id="patientCard" style="display:none; background:linear-gradient(135deg,#ffffff,#f2f6ff); padding:25px; border-radius:20px; box-shadow:0 15px 30px rgba(0,0,0,0.08); max-width:500px; margin:0 auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <div style="text-align: left;">
+                <h2 id="pName" style="margin:0;"></h2>
+                <small id="pHNDisplay" style="color:#7f8c8d; font-weight:bold;"></small>
+            </div>
+            <span id="pDX" style="background:#ff7675; color:white; padding:6px 12px; border-radius:20px; font-size:13px; font-weight:600;"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;text-align:center;">
+            <div><div style="font-size:14px;color:#888;">Weight</div><div id="pWeight" style="font-size:20px;font-weight:700;"></div></div>
+            <div><div style="font-size:14px;color:#888;">Height</div><div id="pHeight" style="font-size:20px;font-weight:700;"></div></div>
+            <div><div style="font-size:14px;color:#888;">BMI</div><div id="pBMI" style="font-size:20px;font-weight:700;"></div></div>
+        </div>
+    </div>
 </div>
 
 <div class="section">
-
-<div class="image-compare">
-
-<div class="image-card">
-<div class="image-title before-title">BEFORE (ก่อนทาน)</div>
-<input type="file" accept="image/*" id="beforeInput">
-<img id="beforeImg">
-</div>
-
-<div class="image-card">
-<div class="image-title after-title">AFTER (หลังทาน)</div>
-<input type="file" accept="image/*" id="afterInput">
-<img id="afterImg">
-</div>
-
-</div>
-
-<div style="text-align:center;">
-<button onclick="compareImages()">คำนวณและบันทึก</button>
-</div>
-
-<div id="result"></div>
-
-<div class="diff-section">
-<div class="diff-title">DIFFERENCE HIGHLIGHT</div>
-<canvas id="diffCanvas"></canvas>
-</div>
-
+    <div class="image-compare">
+        <div class="image-card">
+            <div class="image-title before-title">BEFORE (ก่อนทาน)</div>
+            <input type="file" accept="image/*" id="beforeInput">
+            <img id="beforeImg">
+        </div>
+        <div class="image-card">
+            <div class="image-title after-title">AFTER (หลังทาน)</div>
+            <input type="file" accept="image/*" id="afterInput">
+            <img id="afterImg">
+        </div>
+    </div>
+    <div style="text-align:center;">
+        <button onclick="compareImages()">คำนวณและบันทึก</button>
+    </div>
+    <div id="result"></div>
+    <div class="diff-section">
+        <div class="diff-title">DIFFERENCE HIGHLIGHT</div>
+        <canvas id="diffCanvas"></canvas>
+    </div>
 </div>
 
 <div class="section">
-<h3>Dashboard (การกินอาหาร) (%)</h3>
-
-<div style="margin-bottom:15px;">
-จาก:
-<input type="date" id="startDate">
-ถึง:
-<input type="date" id="endDate">
-<button onclick="loadChart()">ดูกราฟ</button>
-<button onclick="resetDate()">ดูทั้งหมด</button>
-</div>
-
-<canvas id="chartCanvas"></canvas>
+    <h3>Dashboard (การกินอาหาร) (%)</h3>
+    <div style="margin-bottom:15px;">
+        จาก: <input type="date" id="startDate"> ถึง: <input type="date" id="endDate">
+        <button onclick="loadChart()">ดูกราฟ</button>
+        <button onclick="resetDate()">ดูทั้งหมด</button>
+    </div>
+    <canvas id="chartCanvas"></canvas>
 </div>
 
 <script>
-
 const scriptURL="https://script.google.com/macros/s/AKfycbzSEKwDgxyvTFj2M-5d-Xfp6aLrB4946GuloIb0wzqyYTrk9EivMbkU0oUuarAqXoeb8Q/exec";
+let allPatients = []; // เก็บข้อมูลต้นฉบับไว้ Filter
 let selectedName="";
 let selectedData={};
 let chartInstance=null;
 
+// โหลดข้อมูลผู้ป่วยครั้งแรก
 function loadPatients(){
-fetch(scriptURL+"?type=patients")
-.then(res=>res.json())
-.then(data=>{
-let select=document.getElementById("patientSelect");
-select.innerHTML='<option value="">-- เลือกคนไข้ --</option>';
-for(let i=1;i<data.length;i++){
-let row=data[i];
-let option=document.createElement("option");
-option.value=JSON.stringify(row);
-option.text=row[0];
-select.appendChild(option);
+    fetch(scriptURL+"?type=patients")
+    .then(res=>res.json())
+    .then(data=>{
+        allPatients = data.slice(1); // เก็บข้อมูลผู้ป่วยทั้งหมด
+        renderDropdown(allPatients);
+    });
 }
-});
+
+// ฟังก์ชันสร้างรายการใน Select
+function renderDropdown(list) {
+    let select=document.getElementById("patientSelect");
+    select.innerHTML='<option value="">-- เลือกคนไข้ --</option>';
+    list.forEach(row => {
+        let option=document.createElement("option");
+        option.value=JSON.stringify(row);
+        // แสดงชื่อและ HN ใน Dropdown (HN อยู่ลำดับ index 5)
+        option.text = `[HN: ${row[5] || '-'}] ${row[0]}`;
+        select.appendChild(option);
+    });
+}
+
+// ฟังก์ชันค้นหา
+function filterPatients() {
+    let sName = document.getElementById("searchName").value.toLowerCase();
+    let sHN = document.getElementById("searchHN").value.toLowerCase();
+    let filtered = allPatients.filter(row => {
+        let matchName = row[0].toString().toLowerCase().includes(sName);
+        let matchHN = row[5] ? row[5].toString().toLowerCase().includes(sHN) : false;
+        return matchName && matchHN;
+    });
+    renderDropdown(filtered);
 }
 
 patientSelect.addEventListener("change",function(){
-if(!this.value) return;
+    if(!this.value) return;
+    let row=JSON.parse(this.value);
+    selectedName=row[0];
+    let bmi=(row[2]/((row[3]/100)*(row[3]/100))).toFixed(2);
+    
+    // เก็บข้อมูลให้ครบถ้วนเพื่อรอส่ง POST
+    selectedData={
+        name:row[0],
+        dx:row[1],
+        weight:row[2],
+        height:row[3],
+        bmi:bmi,
+        hn:row[5]
+    };
 
-let row=JSON.parse(this.value);
-selectedName=row[0];
-
-let bmi=(row[2]/((row[3]/100)*(row[3]/100))).toFixed(2);
-
-selectedData={
-name:row[0],
-dx:row[1],
-weight:row[2],
-height:row[3],
-bmi:bmi
-};
-
-document.getElementById("patientCard").style.display="block";
-
-pName.innerText = row[0];
-pDX.innerText = row[1];
-pWeight.innerText = row[2] + " kg";
-pHeight.innerText = row[3] + " cm";
-pBMI.innerText = bmi;
-
-loadChart();
+    document.getElementById("patientCard").style.display="block";
+    pName.innerText = row[0];
+    pHNDisplay.innerText = "HN: " + (row[5] || "-");
+    pDX.innerText = row[1];
+    pWeight.innerText = row[2] + " kg";
+    pHeight.innerText = row[3] + " cm";
+    pBMI.innerText = bmi;
+    loadChart();
 });
 
 beforeInput.onchange=()=>loadImage(beforeInput,beforeImg);
 afterInput.onchange=()=>loadImage(afterInput,afterImg);
 
 function loadImage(input,img){
-let file=input.files[0];
-if(!file) return;
-let reader=new FileReader();
-reader.onload=e=>img.src=e.target.result;
-reader.readAsDataURL(file);
+    let file=input.files[0];
+    if(!file) return;
+    let reader=new FileReader();
+    reader.onload=e=>img.src=e.target.result;
+    reader.readAsDataURL(file);
 }
 
+// ใช้ Logic เดิมจาก Code ตัวเก่าที่คุณส่งมา เพื่อความแม่นยำ
 function compareImages(){
+    if(!selectedName){ alert("กรุณาเลือกข้อมูลผู้ป่วย"); return; }
+    if(!beforeImg.src || !afterImg.src){ alert("กรุณาเลือกรูปก่อน"); return; }
 
-if(!selectedName){
-alert("กรุณาเลือกข้อมูลผู้ป่วย");
-return;
-}
+    let canvas=document.getElementById("diffCanvas");
+    let ctx=canvas.getContext("2d");
 
-if(!beforeImg.src || !afterImg.src){
-alert("กรุณาเลือกรูปก่อน");
-return;
-}
+    // คำนวณขนาดภาพให้เท่ากันโดยใช้ Math.min (ป้องกันรูปไม่เท่ากัน)
+    let width=Math.min(beforeImg.width,afterImg.width);
+    let height=Math.min(beforeImg.height,afterImg.height);
+    canvas.width=width;
+    canvas.height=height;
 
-let canvas=document.getElementById("diffCanvas");
-let ctx=canvas.getContext("2d");
+    ctx.drawImage(beforeImg,0,0,width,height);
+    let data1=ctx.getImageData(0,0,width,height);
+    ctx.drawImage(afterImg,0,0,width,height);
+    let data2=ctx.getImageData(0,0,width,height);
 
-let width=Math.min(beforeImg.width,afterImg.width);
-let height=Math.min(beforeImg.height,afterImg.height);
+    let diffCount=0;
+    for(let i=0;i<data1.data.length;i+=4){
+        let r1=data1.data[i]; let g1=data1.data[i+1]; let b1=data1.data[i+2];
+        let r2=data2.data[i]; let g2=data2.data[i+1]; let b2=data2.data[i+2];
+        let diff=Math.abs(r1-r2)+Math.abs(g1-g2)+Math.abs(b1-b2);
+        if(diff>60){
+            data1.data[i]=255; data1.data[i+1]=0; data1.data[i+2]=0; data1.data[i+3]=160;
+            diffCount++;
+        } else { data1.data[i+3]=25; }
+    }
+    ctx.putImageData(data1,0,0);
 
-canvas.width=width;
-canvas.height=height;
+    let diffPercent=((diffCount/(width*height))*100).toFixed(2);
+    result.innerHTML="Difference: "+diffPercent+"%<br>";
 
-ctx.drawImage(beforeImg,0,0,width,height);
-let data1=ctx.getImageData(0,0,width,height);
-
-ctx.drawImage(afterImg,0,0,width,height);
-let data2=ctx.getImageData(0,0,width,height);
-
-let diffCount=0;
-
-for(let i=0;i<data1.data.length;i+=4){
-
-let r1=data1.data[i];
-let g1=data1.data[i+1];
-let b1=data1.data[i+2];
-
-let r2=data2.data[i];
-let g2=data2.data[i+1];
-let b2=data2.data[i+2];
-
-let diff=Math.abs(r1-r2)+Math.abs(g1-g2)+Math.abs(b1-b2);
-
-if(diff>60){
-
-data1.data[i]=255;
-data1.data[i+1]=0;
-data1.data[i+2]=0;
-data1.data[i+3]=160;
-
-diffCount++;
-}
-else{
-data1.data[i+3]=25;
-}
-}
-
-ctx.putImageData(data1,0,0);
-
-let diffPercent=((diffCount/(width*height))*100).toFixed(2);
-
-result.innerHTML=
-"Difference: "+diffPercent+"%<br>"
-
-fetch(scriptURL,{
-method:"POST",
-body:JSON.stringify({
-date:new Date().toISOString(),
-name:selectedData.name,
-dx:selectedData.dx,
-weight:selectedData.weight,
-height:selectedData.height,
-bmi:selectedData.bmi,
-diffPercent:diffPercent,
-pixel:diffCount
-})
-})
-.then(()=>{
-result.innerHTML+="<br>บันทึกสำเร็จ ✅";
-loadChart();
-});
-
+    // บันทึกข้อมูลกลับไปยัง Google Sheets
+    fetch(scriptURL,{
+        method:"POST",
+        body:JSON.stringify({
+            date:new Date().toISOString(),
+            name:selectedData.name,
+            hn:selectedData.hn, // ส่ง HN เพิ่มเข้าไป
+            dx:selectedData.dx,
+            weight:selectedData.weight,
+            height:selectedData.height,
+            bmi:selectedData.bmi,
+            diffPercent:diffPercent,
+            pixel:diffCount
+        })
+    })
+    .then(()=>{
+        result.innerHTML+="<br>บันทึกสำเร็จ ✅";
+        loadChart();
+    });
 }
 
 function loadChart(){
-
-if(!selectedName) return;
-
-let start=startDate.value;
-let end=endDate.value;
-
-fetch(scriptURL+"?type=meals")
-.then(res=>res.json())
-.then(data=>{
-
-let labels=[];
-let values=[];
-
-for(let i=1;i<data.length;i++){
-
-let rowDate=new Date(data[i][0]);
-if(data[i][1]===selectedName){
-
-if(start && rowDate < new Date(start)) continue;
-if(end && rowDate > new Date(end+"T23:59:59")) continue;
-
-labels.push(rowDate.toLocaleDateString());
-values.push(parseFloat(data[i][6]));
-}
-}
-
-drawChart(labels,values);
-
-});
+    if(!selectedName) return;
+    let start=startDate.value;
+    let end=endDate.value;
+    fetch(scriptURL+"?type=meals")
+    .then(res=>res.json())
+    .then(data=>{
+        let labels=[]; let values=[];
+        for(let i=1;i<data.length;i++){
+            let rowDate=new Date(data[i][0]);
+            if(data[i][1]===selectedName){
+                if(start && rowDate < new Date(start)) continue;
+                if(end && rowDate > new Date(end+"T23:59:59")) continue;
+                labels.push(rowDate.toLocaleDateString());
+                values.push(parseFloat(data[i][6]));
+            }
+        }
+        drawChart(labels,values);
+    });
 }
 
 function drawChart(labels,values){
-
-if(chartInstance) chartInstance.destroy();
-
-chartInstance=new Chart(chartCanvas,{
-type:"line",
-data:{
-labels:labels,
-datasets:[{
-label:"Diff %",
-data:values,
-tension:0.4,
-borderWidth:3
-}]
-},
-options:{
-scales:{ y:{beginAtZero:true,max:100}}
-}
-});
+    if(chartInstance) chartInstance.destroy();
+    chartInstance=new Chart(chartCanvas,{
+        type:"line",
+        data:{
+            labels:labels,
+            datasets:[{
+                label:"Diff %",
+                data:values,
+                tension:0.4,
+                borderWidth:3
+            }]
+        },
+        options:{ scales:{ y:{beginAtZero:true,max:100}} }
+    });
 }
 
-function resetDate(){
-startDate.value="";
-endDate.value="";
-loadChart();
-}
-
+function resetDate(){ startDate.value=""; endDate.value=""; loadChart(); }
 window.onload=loadPatients;
 
 </script>
-
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
